@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Zugriff nur für angemeldete Nutzer, deren E-Mail (kleingeschrieben) als Dokument
+// in der Sammlung "members" angelegt ist. Mitglieder werden in der Firebase-Konsole gepflegt.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isMember() {
+      return request.auth != null
+        && request.auth.token.email is string
+        && exists(/databases/$(database)/documents/members/$(request.auth.token.email.lower()));
+    }
+
+    match /members/{email} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+
+    match /projects/{projectId} {
+      allow read, write: if isMember();
+    }
+  }
+}

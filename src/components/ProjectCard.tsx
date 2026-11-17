@@ -17,7 +17,15 @@ export function dateTone(iso: string | null | undefined, done: boolean): string 
   return '';
 }
 
-export function ProjectCard({ project: p }: { project: Project }) {
+export function ProjectCard({
+  project: p,
+  dragHandlers,
+  isDragSource,
+}: {
+  project: Project;
+  dragHandlers?: Record<string, unknown>;
+  isDragSource?: boolean;
+}) {
   const { members, openProject } = useApp();
   const status = statusOf(p);
   const phase = phaseOf(p);
@@ -26,7 +34,11 @@ export function ProjectCard({ project: p }: { project: Project }) {
   const ad = p.steps.aussendienst;
 
   return (
-    <button className={`card ${p.archived ? 'card-archived' : ''}`} onClick={() => openProject(p.id)}>
+    <button
+      className={`card ${p.archived ? 'card-archived' : ''} ${isDragSource ? 'card-drag-source' : ''}`}
+      onClick={() => openProject(p.id)}
+      {...dragHandlers}
+    >
       <div className="card-head">
         {p.priority > 0 && <span className="prio">{priorityMarks(p.priority)}</span>}
         <span className="number">{p.number}</span>

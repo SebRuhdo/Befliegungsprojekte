@@ -142,3 +142,50 @@ export function formatDate(iso: string | null | undefined, withYear = true): str
 export function priorityMarks(p: Priority): string {
   return '!'.repeat(p);
 }
+
+// ---------- Verschieben per Drag & Drop ----------
+
+/** Index der Zielspalte im Arbeitsschritt-Board: 0..6 = Schritt, 7 = Fertig */
+export function phaseIndex(phase: Phase): number {
+  return phase === 'fertig' ? STEPS.length : STEPS.findIndex((s) => s.key === phase);
+}
+
+/** Zielindex, wenn eine Karte im Status-Board auf eine Status-Spalte gezogen wird */
+export function statusTargetIndex(p: Project, target: Status): number | null {
+  const current = statusOf(p);
+  if (current === target) return null;
+  if (target === 'neu') return 0;
+  if (target === 'fertig') return STEPS.length;
+  // In Bearbeitung: von Neu → Vorbereitung erledigt, von Fertig → nur Abgabe wieder offen
+  return current === 'neu' ? 1 : STEPS.length - 1;
+}
+
+export interface MovePlan {
+  patch: Record<string, unknown>;
+  undo: Record<string, unknown>;
+  checked: string[]; // neu abgehakte Schritte
+  unchecked: string[]; // wieder geöffnete Schritte
+}
+
+/**
+ * Alle Schritte vor dem Ziel werden abgehakt, alle ab dem Ziel geöffnet –
+ * so landet das Projekt genau in der Zielspalte. Unveränderte Schritte bleiben unangetastet.
+ */
+export function planMove(p: Project, targetIndex: number, by: string): MovePlan {
+  const plan: MovePlan = { patch: {}, undo: {}, checked: [], unchecked: [] };
+  const now = Date.now();
+  STEPS.forEach((s, i) => {
+    const st = p.steps[s.key];
+    const shouldBeDone = i < targetIndex;
+    if (st.done === shouldBeDone) return;
+    const base = `steps.${s.key}`;
+    plan.patch[`${base}.done`] = shouldBeDone;
+    plan.patch[`${base}.doneAt`] = shouldBeDone ? now : null;
+    plan.patch[`${base}.doneBy`] = shouldBeDone ? by : null;
+    plan.undo[`${base}.done`] = st.done;
+    plan.undo[`${base}.doneAt`] = st.doneAt ?? null;
+    plan.undo[`${base}.doneBy`] = st.doneBy ?? null;
+    (shouldBeDone ? plan.checked : plan.unchecked).push(s.label);
+  });
+  return plan;
+}

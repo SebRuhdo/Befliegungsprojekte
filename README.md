@@ -5,6 +5,7 @@ Gemeinsame Verwaltung unserer Drohnenbefliegungsprojekte – als Web-App (PWA) f
 ## Funktionen
 
 - **Kanban-Board** nach Arbeitsschritten (Vorbereitung → Genehmigung/Polizei → Außendienst → Datensicherung → Stationierung → Auswertung → Abgabe → Fertig) oder nach Status (Neu / In Bearbeitung / Fertig)
+- **Drag & Drop**: Karte auf eine Spalte ziehen (iPhone: kurz gedrückt halten, dann ziehen – auch auf die Spalten-Leiste oben). Vorherige Schritte werden abgehakt, spätere wieder geöffnet; „Rückgängig“ macht es ungeschehen
 - **Projekt**: Nummer, Name, Priorität (! / !! / !!!), Abgabefrist, Kumoplan-Link, Standort-Pin, Notizen
 - **7 feste Arbeitsschritte** zum Abhaken, jeweils mit Zuständigkeit; Außendienst mit Datum
 - **Status automatisch**: Neu (nichts abgehakt) → In Bearbeitung → Fertig („Abgabe“ abgehakt)

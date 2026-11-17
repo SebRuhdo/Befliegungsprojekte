@@ -3,13 +3,17 @@ import { useApp } from '../AppContext';
 import {
   STATUS_LABEL,
   STEPS,
+  phaseIndex,
   phaseOf,
+  planMove,
   statusOf,
+  statusTargetIndex,
   type Phase,
   type Project,
   type Status,
 } from '../model';
 import { ProjectCard } from './ProjectCard';
+import { useCardDrag } from './useCardDrag';
 
 type Grouping = 'phase' | 'status';
 
@@ -41,13 +45,50 @@ function sortProjects(list: Project[]): Project[] {
 }
 
 export function Board() {
-  const { projects, me } = useApp();
+  const { projects, me, update } = useApp();
   const [grouping, setGrouping] = useState<Grouping>(readGrouping);
   const [onlyMine, setOnlyMine] = useState(false);
   const [query, setQuery] = useState('');
   const [showArchive, setShowArchive] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
   const [activeCol, setActiveCol] = useState(0);
+  const [toast, setToast] = useState<{ text: string; undo: () => void } | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 7000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // Karte auf eine Spalte gezogen: Schritte so abhaken/öffnen, dass das Projekt dort landet
+  const handleDrop = (id: string, key: string) => {
+    const p = projects.find((x) => x.id === id);
+    if (!p) return;
+    let target: number | null;
+    let label: string;
+    if (grouping === 'phase') {
+      target = key === 'fertig' ? STEPS.length : STEPS.findIndex((s) => s.key === key);
+      if (target < 0 || target === phaseIndex(phaseOf(p))) return;
+      label = key === 'fertig' ? 'Fertig' : STEPS[target].label;
+    } else {
+      target = statusTargetIndex(p, key as Status);
+      if (target === null) return;
+      label = STATUS_LABEL[key as Status];
+    }
+    const plan = planMove(p, target, me);
+    if (Object.keys(plan.patch).length === 0) return;
+    update(id, plan.patch);
+    const parts = [
+      plan.checked.length ? `abgehakt: ${plan.checked.join(', ')}` : '',
+      plan.unchecked.length ? `wieder offen: ${plan.unchecked.join(', ')}` : '',
+    ].filter(Boolean);
+    setToast({
+      text: `${p.number} ${p.name} → ${label}. ${parts.join(' · ')}`,
+      undo: () => update(id, plan.undo),
+    });
+  };
+
+  const { drag, cardHandlers } = useCardDrag(handleDrop, boardRef);
 
   // Aktive Spalte für die Sprungleiste (Handy) mitführen
   useEffect(() => {
@@ -142,7 +183,10 @@ export function Board() {
         {columns.map((col, i) => (
           <button
             key={col.key}
-            className={`col-chip ${i === activeCol ? 'active' : ''} ${col.items.length === 0 ? 'col-chip-empty' : ''}`}
+            data-drop-key={col.key}
+            className={`col-chip ${i === activeCol ? 'active' : ''} ${col.items.length === 0 ? 'col-chip-empty' : ''} ${
+              drag?.over === col.key ? 'drop-over' : ''
+            }`}
             onClick={() => jumpTo(i)}
           >
             <span className="col-chip-label">{col.short ?? col.title}</span>
@@ -151,16 +195,25 @@ export function Board() {
         ))}
       </nav>
 
-      <div className="board" ref={boardRef}>
+      <div className={`board ${drag ? 'board-dragging' : ''}`} ref={boardRef}>
         {columns.map((col) => (
-          <section key={col.key} className={`column column-${col.key}`}>
+          <section
+            key={col.key}
+            data-drop-key={col.key}
+            className={`column column-${col.key} ${drag?.over === col.key ? 'drop-over' : ''}`}
+          >
             <h2 className="column-title" title={col.hint}>
               <span>{col.title}</span>
               <span className="count">{col.items.length}</span>
             </h2>
             <div className="column-body">
               {sortProjects(col.items).map((p) => (
-                <ProjectCard key={p.id} project={p} />
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  dragHandlers={cardHandlers(p.id, `${p.number} ${p.name}`.trim())}
+                  isDragSource={drag?.id === p.id}
+                />
               ))}
               {col.items.length === 0 && <div className="empty">–</div>}
               {col.key === 'fertig' && archivedCount > 0 && (
@@ -172,6 +225,27 @@ export function Board() {
           </section>
         ))}
       </div>
+
+      {drag && (
+        <div className="drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden>
+          {drag.title}
+        </div>
+      )}
+
+      {toast && (
+        <div className="toast" role="status">
+          <span>{toast.text}</span>
+          <button
+            className="link-btn strong"
+            onClick={() => {
+              toast.undo();
+              setToast(null);
+            }}
+          >
+            Rückgängig
+          </button>
+        </div>
+      )}
     </div>
   );
 }

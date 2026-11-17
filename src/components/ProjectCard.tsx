@@ -3,7 +3,6 @@ import {
   STEPS,
   daysUntil,
   formatDate,
-  initials,
   phaseOf,
   priorityMarks,
   statusOf,
@@ -33,8 +32,8 @@ export function ProjectCard({ project: p }: { project: Project }) {
         <span className="number">{p.number}</span>
         {status === 'neu' && <span className="badge badge-neu">Neu</span>}
         {currentAssignee && (
-          <span className="avatar" title={`Zuständig: ${memberName(members, currentAssignee)}`}>
-            {initials(memberName(members, currentAssignee))}
+          <span className="assignee-chip" title="Zuständig für den aktuellen Schritt">
+            {memberName(members, currentAssignee)}
           </span>
         )}
       </div>

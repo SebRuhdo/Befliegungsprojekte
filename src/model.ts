@@ -1,16 +1,18 @@
 // Datenmodell der Befliegungsprojekte
+// short: Kurzform mit weichen Trennstellen (\u00AD) für die Spalten-Leiste auf dem Handy
 
 export const STEPS = [
-  { key: 'vorbereitung', label: 'Vorbereitung' },
-  { key: 'genehmigung', label: 'Genehmigung/Polizei' },
-  { key: 'aussendienst', label: 'Außendienst', hasDate: true },
-  { key: 'datensicherung', label: 'Datensicherung' },
+  { key: 'vorbereitung', label: 'Vorbereitung', short: 'Vor\u00ADberei\u00ADtung' },
+  { key: 'genehmigung', label: 'Genehmigung/Polizei', short: 'Geneh\u00ADmigung' },
+  { key: 'aussendienst', label: 'Außendienst', short: 'Außen\u00ADdienst', hasDate: true },
+  { key: 'datensicherung', label: 'Datensicherung', short: 'Daten\u00ADsiche\u00ADrung' },
   {
     key: 'stationierung',
     label: 'Stationierung',
+    short: 'Statio\u00ADnierung',
     hint: 'Punktwolke berechnen & referenzieren (LiDAR: Linien zusammenführen & klassifizieren · Photogrammetrie: Bündelblockausgleichung & Rekonstruktion)',
   },
-  { key: 'auswertung', label: 'Auswertung' },
+  { key: 'auswertung', label: 'Auswertung', short: 'Aus\u00ADwertung' },
   { key: 'abgabe', label: 'Abgabe' },
 ] as const;
 
@@ -139,11 +141,4 @@ export function formatDate(iso: string | null | undefined, withYear = true): str
 
 export function priorityMarks(p: Priority): string {
   return '!'.repeat(p);
-}
-
-export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }

@@ -35,7 +35,7 @@ npm run build      # Produktions-Build nach dist/
 3. **Authentication** → *Jetzt starten* → Anmeldemethode **E-Mail/Passwort** aktivieren →
    Reiter *Nutzer* → beide Nutzer mit E-Mail und Passwort anlegen.
 4. **Firestore** → *Sammlung starten* → Sammlungs-ID `members` →
-   je Person ein Dokument: **Dokument-ID = E-Mail-Adresse in Kleinbuchstaben**, Feld `name` (string), z. B. „Anna Muster“.
+   je Person ein Dokument: **Dokument-ID = E-Mail-Adresse in Kleinbuchstaben**, Feld `name` (string) mit dem **Vornamen** – der wird in der App angezeigt.
    Nur wer hier eingetragen ist, sieht und bearbeitet Projekte.
 5. **Firestore → Regeln**: Inhalt von [`firestore.rules`](firestore.rules) einfügen → *Veröffentlichen*.
 6. **Projekteinstellungen** (Zahnrad) → *Meine Apps* → Web-App (`</>`) registrieren →

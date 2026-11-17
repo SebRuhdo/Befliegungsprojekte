@@ -469,17 +469,18 @@ textarea.input {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
-.avatar {
+.assignee-chip {
   margin-left: auto;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
   color: var(--primary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  display: grid;
-  place-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 .card-title {
@@ -930,43 +931,53 @@ textarea.input {
   }
 }
 
-/* Sprungleiste zu den Spalten (nur auf schmalen Bildschirmen) */
+/* Sprungleiste zu den Spalten (nur auf schmalen Bildschirmen): alle Spalten auf einen Blick */
 .col-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
-  overflow-x: auto;
   padding: 6px 16px 2px;
-  scrollbar-width: none;
 }
-.col-nav::-webkit-scrollbar {
-  display: none;
+.col-nav-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .col-chip {
-  flex: 0 0 auto;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 1px;
+  min-width: 0;
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 999px;
-  padding: 4px 6px 4px 12px;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 10px;
+  padding: 5px 4px;
   cursor: pointer;
 }
-.col-chip .count {
-  background: var(--column);
+.col-chip-label {
+  max-width: 100%;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  hyphens: manual;
+  overflow-wrap: anywhere;
+}
+.col-chip-count {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 .col-chip-empty {
   color: var(--muted);
 }
+.col-chip-empty .col-chip-count {
+  font-weight: 500;
+}
 .col-chip.active {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
-}
-.col-chip.active .count {
-  background: rgba(255, 255, 255, 0.25);
   color: #fff;
 }
 

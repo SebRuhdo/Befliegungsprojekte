@@ -90,12 +90,13 @@ export function Board() {
   const archivedCount = filtered.filter((p) => p.archived).length;
   const visible = filtered.filter((p) => showArchive || !p.archived);
 
-  const columns: { key: string; title: string; hint?: string; items: Project[] }[] =
+  const columns: { key: string; title: string; short?: string; hint?: string; items: Project[] }[] =
     grouping === 'phase'
       ? [
           ...STEPS.map((s) => ({
             key: s.key as Phase,
             title: s.label,
+            short: 'short' in s ? s.short : undefined,
             hint: 'hint' in s ? s.hint : undefined,
             items: [] as Project[],
           })),
@@ -137,14 +138,15 @@ export function Board() {
         />
       </div>
 
-      <nav className="col-nav" aria-label="Zu Spalte springen">
+      <nav className={`col-nav col-nav-${columns.length}`} aria-label="Zu Spalte springen">
         {columns.map((col, i) => (
           <button
             key={col.key}
             className={`col-chip ${i === activeCol ? 'active' : ''} ${col.items.length === 0 ? 'col-chip-empty' : ''}`}
             onClick={() => jumpTo(i)}
           >
-            {col.title} <span className="count">{col.items.length}</span>
+            <span className="col-chip-label">{col.short ?? col.title}</span>
+            <span className="col-chip-count">{col.items.length}</span>
           </button>
         ))}
       </nav>

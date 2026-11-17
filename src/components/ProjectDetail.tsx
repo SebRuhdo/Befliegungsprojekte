@@ -57,6 +57,7 @@ function EditableText({
 export function ProjectDetail({ project: p, onClose }: { project: Project; onClose: () => void }) {
   const { update, members, me, backend } = useApp();
   const status = statusOf(p);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const set = (patch: Record<string, unknown>) => update(p.id, patch);
 
   useEffect(() => {
@@ -253,17 +254,26 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
                 {p.archived ? 'Aus Archiv holen' : 'Archivieren'}
               </button>
             )}
-            <button
-              className="btn btn-danger"
-              onClick={() => {
-                if (confirm(`Projekt „${title}“ wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) {
-                  backend.deleteProject(p.id);
-                  onClose();
-                }
-              }}
-            >
-              Löschen
-            </button>
+            {confirmDelete ? (
+              <>
+                <button className="btn" onClick={() => setConfirmDelete(false)}>
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    backend.deleteProject(p.id);
+                    onClose();
+                  }}
+                >
+                  Endgültig löschen
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-danger" onClick={() => setConfirmDelete(true)}>
+                Löschen
+              </button>
+            )}
           </div>
           <p className="muted small">
             Zuletzt geändert {p.updatedAt ? new Date(p.updatedAt).toLocaleString('de-DE') : '–'}

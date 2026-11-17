@@ -22,8 +22,9 @@
   color-scheme: light dark;
 }
 
+/* Dunkles Design: folgt dem System, außer es ist ausdrücklich ein Thema gesetzt */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #000000;
     --surface: #1c1c1e;
     --surface-2: #2c2c2e;
@@ -39,7 +40,26 @@
     --fertig: #34d399;
     --prio: #ff9f0a;
     --shadow: none;
+    color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --column: #121214;
+  --text: #f2f2f7;
+  --muted: #8e8e93;
+  --border: #38383a;
+  --primary: #0a84ff;
+  --done: #30d158;
+  --overdue: #ff453a;
+  --soon: #ffb340;
+  --neu: #a78bfa;
+  --fertig: #34d399;
+  --prio: #ff9f0a;
+  --shadow: none;
+  color-scheme: dark;
 }
 
 * {

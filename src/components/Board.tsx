@@ -78,12 +78,13 @@ export function Board() {
     const plan = planMove(p, target, me);
     if (Object.keys(plan.patch).length === 0) return;
     update(id, plan.patch);
+    const n = (k: number) => (k === 1 ? '1 Schritt' : `${k} Schritte`);
     const parts = [
-      plan.checked.length ? `abgehakt: ${plan.checked.join(', ')}` : '',
-      plan.unchecked.length ? `wieder offen: ${plan.unchecked.join(', ')}` : '',
+      plan.checked.length ? `${n(plan.checked.length)} abgehakt` : '',
+      plan.unchecked.length ? `${n(plan.unchecked.length)} wieder offen` : '',
     ].filter(Boolean);
     setToast({
-      text: `${p.number} ${p.name} → ${label}. ${parts.join(' · ')}`,
+      text: `${p.name || p.number} → ${label} · ${parts.join(', ')}`,
       undo: () => update(id, plan.undo),
     });
   };
@@ -136,7 +137,9 @@ export function Board() {
       ? [
           ...STEPS.map((s) => ({
             key: s.key as Phase,
-            title: s.label,
+            // Spaltentitel mit Trennstellen, damit schmale Spalten sauber umbrechen
+            title:
+              'short' in s && s.short.replace(/\u00AD/g, '') === s.label ? s.short : s.label.replace('/', '/\u200B'),
             short: 'short' in s ? s.short : undefined,
             hint: 'hint' in s ? s.hint : undefined,
             items: [] as Project[],
@@ -160,7 +163,8 @@ export function Board() {
       <div className="toolbar">
         <div className="segmented" role="group" aria-label="Spalten">
           <button className={grouping === 'phase' ? 'active' : ''} onClick={() => setGroupingPersist('phase')}>
-            Arbeitsschritte
+            <span className="long">Arbeitsschritte</span>
+            <span className="short">Schritte</span>
           </button>
           <button className={grouping === 'status' ? 'active' : ''} onClick={() => setGroupingPersist('status')}>
             Status
@@ -168,7 +172,8 @@ export function Board() {
         </div>
         <label className="chip-toggle">
           <input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} />
-          Nur meine
+          <span className="long">Nur meine</span>
+          <span className="short">Meine</span>
         </label>
         <input
           className="search"

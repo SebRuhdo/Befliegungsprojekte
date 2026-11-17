@@ -109,14 +109,16 @@ textarea {
 /* ---------- Layout ---------- */
 
 .app {
-  min-height: 100vh;
+  /* App-Rahmen: Kopf und Fuß stehen fest, nur der Inhalt scrollt */
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topbar {
-  position: sticky;
-  top: 0;
+  flex: 0 0 auto;
   z-index: 20;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: saturate(180%) blur(16px);
@@ -165,9 +167,24 @@ textarea {
 .content {
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.content-board,
+.content-karte {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.board-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .footer {
+  flex: 0 0 auto;
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -368,6 +385,8 @@ textarea.input {
 }
 
 .board {
+  flex: 1;
+  min-height: 0;
   display: flex;
   gap: 12px;
   overflow-x: auto;
@@ -384,7 +403,7 @@ textarea.input {
   background: var(--column);
   border-radius: 14px;
   padding: 10px;
-  max-height: calc(100vh - 210px);
+  max-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -392,16 +411,16 @@ textarea.input {
 .column-title {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   font-size: 15px;
   margin: 2px 4px 10px;
 }
 .column-title span:first-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   min-width: 0;
+  hyphens: manual;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
 }
 .column-title[title] span:first-child {
   text-decoration: underline dotted var(--muted);
@@ -420,6 +439,7 @@ textarea.input {
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   min-height: 40px;
 }
 
@@ -453,6 +473,8 @@ textarea.input {
 
 .card-head {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
   align-items: center;
   gap: 6px;
   font-size: 13px;
@@ -471,7 +493,7 @@ textarea.input {
 }
 .assignee-chip {
   margin-left: auto;
-  max-width: 45%;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -762,8 +784,8 @@ textarea.input {
 
 .map-view {
   position: relative;
-  height: calc(100vh - 150px);
-  height: calc(100dvh - 150px - var(--safe-top));
+  flex: 1;
+  min-height: 0;
 }
 .big-map {
   position: absolute;
@@ -806,7 +828,7 @@ textarea.input {
   font-weight: 600;
   cursor: pointer;
 }
-.content-karte + .footer {
+.footer-karte {
   display: none;
 }
 
@@ -922,12 +944,59 @@ textarea.input {
   font-size: 14px;
 }
 
-@media (max-width: 420px) {
-  .add-label {
-    display: none;
+.toolbar .short {
+  display: none;
+}
+
+/* Handy: Kopfbereich kompakt, damit die Spalten möglichst viel Platz haben */
+@media (max-width: 699px) {
+  .topbar {
+    padding-top: calc(var(--safe-top) + 6px);
   }
   .topbar h1 {
     font-size: 22px;
+  }
+  .add-btn {
+    padding: 6px 12px;
+  }
+  .tabs {
+    margin-top: 2px;
+  }
+  .tab {
+    padding: 8px 10px;
+  }
+  .toolbar {
+    flex-wrap: nowrap;
+    padding-top: 8px;
+    gap: 6px;
+  }
+  .toolbar .long {
+    display: none;
+  }
+  .toolbar .short {
+    display: inline;
+  }
+  .toolbar .segmented button {
+    padding: 6px 9px;
+  }
+  .chip-toggle {
+    padding: 5px 10px;
+  }
+  .search {
+    min-width: 0;
+    width: 100%;
+  }
+  .board {
+    padding-bottom: calc(var(--safe-bottom) + 10px);
+  }
+  .footer-board {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .add-label {
+    display: none;
   }
 }
 
@@ -991,7 +1060,6 @@ textarea.input {
   .column {
     flex: 1 1 0;
     min-width: 160px;
-    max-height: calc(100vh - 170px);
   }
   .column-title {
     font-size: 14px;
@@ -1005,13 +1073,22 @@ textarea.input {
   user-select: none;
   -webkit-touch-callout: none;
 }
-body.is-dragging,
-body.is-dragging * {
+html.is-dragging,
+html.is-dragging * {
   cursor: grabbing !important;
   -webkit-user-select: none;
   user-select: none;
 }
+/* Während des Ziehens scrollt nichts von selbst – nur das automatische Seitwärts-Scrollen am Rand */
+html.is-dragging,
+html.is-dragging body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+html.is-dragging .column-body,
 .board-dragging {
+  overflow: hidden;
   scroll-snap-type: none;
 }
 .card-drag-source {

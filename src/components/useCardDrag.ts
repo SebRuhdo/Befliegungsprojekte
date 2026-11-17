@@ -22,7 +22,7 @@ interface Pending {
 }
 
 const LONG_PRESS_MS = 350;
-const TOUCH_SLOP = 10; // so weit darf sich der Finger vor Ablauf des Long-Press bewegen (sonst: Scrollen)
+const TOUCH_SLOP = 8; // so weit darf sich der Finger vor Ablauf des Long-Press bewegen (sonst: Scrollen)
 const MOUSE_THRESHOLD = 6;
 const EDGE = 48; // Randzone für automatisches Seitwärts-Scrollen
 
@@ -56,7 +56,8 @@ export function useCardDrag(
     const p = pending.current;
     if (!p) return;
     clearPending();
-    document.body.classList.add('is-dragging');
+    // Seite und Spalten während des Ziehens festhalten (sonst scrollt iOS mit)
+    document.documentElement.classList.add('is-dragging');
     navigator.vibrate?.(10);
     update({ id: p.id, title: p.title, x, y, over: dropKeyAt(x, y) });
   };
@@ -70,7 +71,7 @@ export function useCardDrag(
     const d = dragRef.current;
     clearPending();
     if (!d) return;
-    document.body.classList.remove('is-dragging');
+    document.documentElement.classList.remove('is-dragging');
     update(null);
     // Der Klick nach dem Loslassen soll das Projekt nicht öffnen
     suppressClick.current = true;
@@ -101,7 +102,9 @@ export function useCardDrag(
         return;
       }
       const p = pending.current;
-      if (p && Math.hypot(t.clientX - p.startX, t.clientY - p.startY) > TOUCH_SLOP) clearPending();
+      if (!p) return;
+      // Nicht abbrechbar = der Browser scrollt bereits → das ist eine Scroll-Geste, kein Drag
+      if (!e.cancelable || Math.hypot(t.clientX - p.startX, t.clientY - p.startY) > TOUCH_SLOP) clearPending();
     };
     const onTouchEnd = () => {
       if (dragRef.current) finish(true);
@@ -128,7 +131,7 @@ export function useCardDrag(
       window.removeEventListener('touchcancel', onTouchCancel);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('contextmenu', onContextMenu);
-      document.body.classList.remove('is-dragging');
+      document.documentElement.classList.remove('is-dragging');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -143,7 +146,7 @@ export function useCardDrag(
       const el = scrollContainer.current;
       if (d && el) {
         const r = el.getBoundingClientRect();
-        if (d.y >= r.top && d.y <= r.bottom) {
+        if (d.y >= r.top && d.y <= r.bottom && el.scrollWidth > el.clientWidth) {
           if (d.x < r.left + EDGE) el.scrollLeft -= 10;
           else if (d.x > r.right - EDGE) el.scrollLeft += 10;
         }

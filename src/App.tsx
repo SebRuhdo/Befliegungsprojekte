@@ -149,7 +149,7 @@ function Main({ backend, user }: { backend: Backend; user: AuthUser }) {
           {view === 'karte' && <MapView />}
         </main>
 
-        <footer className="footer">
+        <footer className={`footer footer-${view}`}>
           {backend.mode === 'demo' ? (
             <span>Demo-Modus · Daten nur in diesem Browser</span>
           ) : (

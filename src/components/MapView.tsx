@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useApp } from '../AppContext';
 import { STATUS_LABEL, phaseOf, statusOf, stepLabel, type Status } from '../model';
+import { AddressSearch } from './AddressSearch';
 import { DEFAULT_CENTER, DEFAULT_ZOOM, L, addBaseLayer, pinIcon } from './leaflet';
 
 const COLORS: Record<Status, string> = {
@@ -19,6 +20,7 @@ export function MapView() {
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
   const fitted = useRef(false);
+  const searchMarker = useRef<L.CircleMarker | null>(null);
   const openRef = useRef(openProject);
   openRef.current = openProject;
 
@@ -65,6 +67,26 @@ export function MapView() {
   return (
     <div className="map-view">
       <div ref={el} className="big-map" />
+      <AddressSearch
+        compact
+        className="map-search"
+        onSelect={(pl) => {
+          const m = map.current;
+          if (!m) return;
+          searchMarker.current?.remove();
+          searchMarker.current = L.circleMarker([pl.lat, pl.lng], {
+            radius: 9,
+            color: '#fff',
+            weight: 3,
+            fillColor: '#0a84ff',
+            fillOpacity: 1,
+          })
+            .addTo(m)
+            .bindPopup(esc(pl.label))
+            .openPopup();
+          m.setView([pl.lat, pl.lng], 16);
+        }}
+      />
       <div className="map-legend">
         {(Object.keys(COLORS) as Status[]).map((s) => (
           <span key={s}>

@@ -11,6 +11,7 @@ Gemeinsame Verwaltung unserer Drohnenbefliegungsprojekte – als Web-App (PWA) f
 - **Status automatisch**: Neu (nichts abgehakt) → In Bearbeitung → Fertig („Abgabe“ abgehakt)
 - **Termine**: Außendienste und Abgabefristen chronologisch, überfällige rot; „In Kalender“ erzeugt einen Termin (.ics) für iPhone-Kalender/Outlook
 - **Karte**: alle Projekte mit Pin, Navigation per Apple Karten / Google Maps
+- **Ortssuche** (Projekt-Standort und Karte): Adresse/Ort über OpenStreetMap-Nominatim (nur Deutschland, Suche per Knopf – keine Suche beim Tippen gemäß Nutzungsregeln) oder Koordinaten: Dezimalgrad (`48.1374, 11.5755`) bzw. UTM ETRS89 Zone 32/33 (`32 691234 5334567`, `32691234 5334567`; ohne Zone → 32)
 - **Offline**: Daten werden lokal zwischengespeichert, Änderungen ohne Netz werden später synchronisiert
 - **Live-Abgleich** zwischen allen Geräten, Archiv für abgeschlossene Projekte
 

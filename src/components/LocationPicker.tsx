@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GeoPoint } from '../model';
+import { AddressSearch } from './AddressSearch';
 import { DEFAULT_CENTER, DEFAULT_ZOOM, L, addBaseLayer, pinIcon } from './leaflet';
 
 export function LocationPicker({
@@ -73,11 +74,18 @@ export function LocationPicker({
 
   return (
     <div className="location">
+      <AddressSearch
+        onSelect={(pl) => {
+          const v = { lat: +pl.lat.toFixed(6), lng: +pl.lng.toFixed(6) };
+          onChange(v);
+          map.current?.setView([v.lat, v.lng], 17);
+        }}
+      />
       <div ref={el} className="mini-map" />
       <p className="muted small">
         {value
           ? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)} · Pin verschieben oder in die Karte tippen`
-          : 'In die Karte tippen, um den Pin zu setzen.'}
+          : 'Adresse suchen oder in die Karte tippen, um den Pin zu setzen.'}
       </p>
       <div className="button-row">
         <button className="btn btn-small" onClick={useMyLocation} disabled={locating}>

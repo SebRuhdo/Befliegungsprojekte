@@ -1150,3 +1150,16 @@ html.is-dragging .column-body,
     animation: none;
   }
 }
+
+/* Kumoplan-Feld: nur die Kartennummer eingeben */
+.input-prefix {
+  white-space: nowrap;
+}
+.kumoplan-input {
+  width: 9em;
+  flex: 0 1 auto;
+  font-variant-numeric: tabular-nums;
+}
+a.btn {
+  color: var(--primary);
+}

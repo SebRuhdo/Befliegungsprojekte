@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "login": "firebase login"
   },
   "dependencies": {
     "firebase": "^13.4.0",
@@ -20,6 +22,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
+    "firebase-tools": "^15.36.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.6",
     "vite-plugin-pwa": "^2.0.0"

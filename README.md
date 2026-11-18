@@ -52,14 +52,28 @@ Weitere Kolleginnen/Kollegen: in Authentication als Nutzer anlegen **und** in `m
 
 ## Veröffentlichen (Firebase Hosting, kostenlos)
 
+Einmalig vorbereiten:
+
+1. **Node.js** in der LTS-Version von <https://nodejs.org> installieren (Standard-Installer, alles bestätigen).
+2. Code herunterladen: auf GitHub den Branch auswählen → grüner Knopf **Code** → **Download ZIP** → ZIP entpacken.
+3. Eine Kommandozeile **im entpackten Ordner** öffnen:
+   - **Windows:** Ordner im Explorer öffnen → oben in die Adresszeile `cmd` tippen → Enter
+     (die *Eingabeaufforderung* verwenden, nicht PowerShell).
+   - **Mac:** Programm *Terminal* öffnen → `cd ` tippen (mit Leerzeichen) → Ordner ins Fenster ziehen → Enter.
+4. Befehle nacheinander ausführen:
+
 ```bash
-npm install -g firebase-tools
-firebase login
-npm run build
-firebase deploy --only hosting,firestore:rules
+npm install          # lädt alle Bausteine (dauert einige Minuten)
+npm run login        # öffnet den Browser: mit dem Google-Konto des Firebase-Projekts anmelden
+npm run deploy       # baut die App und lädt sie hoch
 ```
 
-Danach ist die App unter `https://<projekt-id>.web.app` erreichbar.
+Danach ist die App unter <https://befliegungsprojekte.web.app> erreichbar.
+
+**Bei späteren Änderungen:** neuen Stand als ZIP herunterladen und entpacken, dort `npm install` und `npm run deploy`
+(die Anmeldung aus `npm run login` bleibt auf dem PC gespeichert).
+
+Die Firestore-Regeln werden in der Firebase-Konsole gepflegt (Inhalt von [`firestore.rules`](firestore.rules)).
 
 **iPhone**: Adresse in Safari öffnen → Teilen → *Zum Home-Bildschirm*.
 **PC**: im Browser öffnen (Chrome/Edge bieten zusätzlich *App installieren* an).

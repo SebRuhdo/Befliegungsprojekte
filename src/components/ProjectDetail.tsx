@@ -5,6 +5,8 @@ import {
   STATUS_LABEL,
   STEPS,
   doneCount,
+  kumoplanDisplay,
+  kumoplanUrlFromInput,
   statusOf,
   type Priority,
   type Project,
@@ -26,6 +28,7 @@ function EditableText({
   placeholder?: string;
   className?: string;
   type?: string;
+  inputMode?: 'numeric' | 'text';
   'aria-label'?: string;
 }) {
   const [local, setLocal] = useState(value);
@@ -149,13 +152,14 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
           <div className="field-row">
             <span className="field-label">Kumoplan</span>
             <div className="date-group">
+              <span className="input-prefix muted small">cards/</span>
               <EditableText
-                className="input"
-                type="url"
-                value={p.kumoplanUrl}
-                onCommit={(v) => set({ kumoplanUrl: v.trim() })}
-                placeholder="Link zum Kumoplan-Projekt einfügen"
-                aria-label="Kumoplan-Link"
+                className="input kumoplan-input"
+                value={kumoplanDisplay(p.kumoplanUrl)}
+                onCommit={(v) => set({ kumoplanUrl: kumoplanUrlFromInput(v) })}
+                placeholder="Nr., z. B. 3063"
+                inputMode="numeric"
+                aria-label="Kumoplan-Kartennummer oder Link"
               />
               {/^https?:\/\//.test(p.kumoplanUrl) && (
                 <a className="btn btn-small" href={p.kumoplanUrl} target="_blank" rel="noreferrer">

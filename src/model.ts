@@ -189,3 +189,30 @@ export function planMove(p: Project, targetIndex: number, by: string): MovePlan 
   });
   return plan;
 }
+
+// ---------- Kumoplan ----------
+
+export const KUMOPLAN_BASE = 'https://geoplus.kumoplan.de/cards/';
+
+/** Nummer der Kumoplan-Karte aus gespeichertem Link (oder leer) */
+export function kumoplanId(url: string): string {
+  return url.match(/\/cards\/(\d+)/)?.[1] ?? '';
+}
+
+/**
+ * Eingabe → zu speichernder Link. Akzeptiert die Kartennummer („3063“)
+ * oder einen eingefügten Link („https://geoplus.kumoplan.de/cards/3063“).
+ */
+export function kumoplanUrlFromInput(input: string): string {
+  const v = input.trim();
+  if (!v) return '';
+  if (/^\d+$/.test(v)) return KUMOPLAN_BASE + v;
+  const id = kumoplanId(v);
+  if (id) return KUMOPLAN_BASE + id;
+  return /^https?:\/\//.test(v) ? v : '';
+}
+
+/** Anzeige im Eingabefeld: Kartennummer, sonst der Link selbst */
+export function kumoplanDisplay(url: string): string {
+  return kumoplanId(url) || url;
+}

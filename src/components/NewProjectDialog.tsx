@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../AppContext';
-import type { Priority } from '../model';
+import { kumoplanUrlFromInput, type Priority } from '../model';
 
 export function NewProjectDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
   const { backend, me, projects } = useApp();
@@ -8,6 +8,7 @@ export function NewProjectDialog({ onClose, onCreated }: { onClose: () => void; 
   const [name, setName] = useState('');
   const [priority, setPriority] = useState<Priority>(0);
   const [deadline, setDeadline] = useState('');
+  const [kumoplan, setKumoplan] = useState('');
   const numberRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export function NewProjectDialog({ onClose, onCreated }: { onClose: () => void; 
     e.preventDefault();
     if (!name.trim() && !number.trim()) return;
     const id = backend.createProject(
-      { number: number.trim(), name: name.trim(), priority, deadline: deadline || null, kumoplanUrl: '' },
+      { number: number.trim(), name: name.trim(), priority, deadline: deadline || null, kumoplanUrl: kumoplanUrlFromInput(kumoplan) },
       me,
     );
     onCreated(id);
@@ -66,7 +67,17 @@ export function NewProjectDialog({ onClose, onCreated }: { onClose: () => void; 
             <span className="field-label">Abgabefrist (optional)</span>
             <input className="input" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
           </label>
-          <p className="muted small">Alle 7 Arbeitsschritte werden automatisch angelegt. Zuständigkeiten, Außendienst-Termin, Standort und Kumoplan-Link trägst du danach im Projekt ein.</p>
+          <label className="field">
+            <span className="field-label">Kumoplan-Karte (optional)</span>
+            <input
+              className="input"
+              inputMode="numeric"
+              value={kumoplan}
+              onChange={(e) => setKumoplan(e.target.value)}
+              placeholder="Nr. aus …/cards/3063 oder ganzer Link"
+            />
+          </label>
+          <p className="muted small">Alle 7 Arbeitsschritte werden automatisch angelegt. Zuständigkeiten, Außendienst-Termin und Standort trägst du danach im Projekt ein.</p>
           <button type="submit" className="btn btn-primary wide">
             Projekt anlegen
           </button>

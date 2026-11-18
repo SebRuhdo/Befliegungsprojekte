@@ -31,17 +31,21 @@ npm run build      # Produktions-Build nach dist/
 
 ## Firebase einrichten (einmalig)
 
-1. <https://console.firebase.google.com> → **Projekt hinzufügen** (Google Analytics wird nicht benötigt).
-2. **Firestore Database** → *Datenbank erstellen* → Standort **europe-west3 (Frankfurt)** → Produktionsmodus.
-3. **Authentication** → *Jetzt starten* → Anmeldemethode **E-Mail/Passwort** aktivieren →
-   Reiter *Nutzer* → beide Nutzer mit E-Mail und Passwort anlegen.
-4. **Firestore** → *Sammlung starten* → Sammlungs-ID `members` →
+1. <https://console.firebase.google.com> → **Projekt erstellen** (Google Analytics wird nicht benötigt).
+2. **Datenbanken & Speicher → Firestore** → *Datenbank hinzufügen* → **Standard edition** →
+   Standort **europe-west3 (Frankfurt)** (lässt sich später nicht ändern) → **Produktionsmodus** → *Erstellen*.
+3. **Sicherheit → Authentication** → *Jetzt starten* → *Anmeldemethode* → **E-Mail/Passwort** aktivieren (nicht „E-Mail-Link“) →
+   Reiter *Nutzer* → *Nutzer hinzufügen* → beide Personen mit E-Mail und Passwort anlegen.
+4. **Firestore → Daten** → *Sammlung starten* → Sammlungs-ID `members` →
    je Person ein Dokument: **Dokument-ID = E-Mail-Adresse in Kleinbuchstaben**, Feld `name` (string) mit dem **Vornamen** – der wird in der App angezeigt.
    Nur wer hier eingetragen ist, sieht und bearbeitet Projekte.
 5. **Firestore → Regeln**: Inhalt von [`firestore.rules`](firestore.rules) einfügen → *Veröffentlichen*.
-6. **Projekteinstellungen** (Zahnrad) → *Meine Apps* → Web-App (`</>`) registrieren →
-   die angezeigten Werte (`apiKey`, `authDomain`, `projectId`, …) in `.env.local` eintragen (Vorlage: [`.env.example`](.env.example)).
+6. **Projekteinstellungen** (Zahnrad) → *Allgemein* → *Meine Apps* → Web-App (`</>`) registrieren
+   (Firebase Hosting hier nicht ankreuzen) → die angezeigten Werte (`apiKey`, `authDomain`, `projectId`, …)
+   in `.env.local` eintragen (Vorlage: [`.env.example`](.env.example)).
    Diese Werte sind nicht geheim; geschützt wird über Login + Regeln.
+
+Die Menünamen der Firebase-Konsole ändern sich gelegentlich; im Zweifel nach „Firestore“ bzw. „Authentication“ suchen.
 
 Weitere Kolleginnen/Kollegen: in Authentication als Nutzer anlegen **und** in `members` eintragen.
 

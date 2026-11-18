@@ -16,6 +16,21 @@ export function LocationPicker({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const [locating, setLocating] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Geozonen-Karte (dipul) öffnen und Koordinaten in die Zwischenablage kopieren
+  // (ein direkter Link auf eine Position ist bei dipul nicht dokumentiert)
+  const openDipul = () => {
+    if (!value) return;
+    const text = `${value.lat.toFixed(6)}, ${value.lng.toFixed(6)}`;
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 4000);
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     if (!el.current) return;
@@ -109,12 +124,23 @@ export function LocationPicker({
             >
               Google Maps
             </a>
+            <a
+              className="btn btn-small"
+              href="https://maptool-dipul.dfs.de/"
+              target="_blank"
+              rel="noreferrer"
+              onClick={openDipul}
+              title="Amtliche Karte der Drohnen-Geozonen öffnen (Koordinaten werden kopiert)"
+            >
+              Geozonen (dipul)
+            </a>
             <button className="btn btn-small btn-danger-text" onClick={() => onChange(null)}>
               Pin entfernen
             </button>
           </>
         )}
       </div>
+      {copied && <p className="muted small">Koordinaten des Pins in die Zwischenablage kopiert.</p>}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { memberName, useApp } from '../AppContext';
 import {
   STEPS,
   daysUntil,
+  equipmentConflicts,
   formatDate,
   phaseOf,
   priorityMarks,
@@ -26,7 +27,8 @@ export function ProjectCard({
   dragHandlers?: Record<string, unknown>;
   isDragSource?: boolean;
 }) {
-  const { members, openProject } = useApp();
+  const { members, openProject, projects, settings } = useApp();
+  const conflict = equipmentConflicts(p, projects, settings.equipment).length > 0;
   const status = statusOf(p);
   const phase = phaseOf(p);
   const fertig = status === 'fertig';
@@ -61,7 +63,7 @@ export function ProjectCard({
         ))}
       </div>
 
-      {(ad.date || p.deadline) && (
+      {(ad.date || p.deadline || conflict) && (
         <div className="card-meta">
           {ad.date && (
             <span className={`meta ${dateTone(ad.date, ad.done)} ${ad.done ? 'meta-done' : ''}`}>
@@ -71,6 +73,7 @@ export function ProjectCard({
           {p.deadline && (
             <span className={`meta ${dateTone(p.deadline, fertig)}`}>Abgabe {formatDate(p.deadline)}</span>
           )}
+          {conflict && <span className="meta tone-soon">⚠ Gerät doppelt</span>}
         </div>
       )}
     </button>

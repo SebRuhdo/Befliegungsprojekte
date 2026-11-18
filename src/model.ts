@@ -24,6 +24,13 @@ export interface StepState {
   doneBy?: string | null; // E-Mail des Mitglieds
   assignee?: string | null; // E-Mail des Mitglieds
   date?: string | null; // YYYY-MM-DD (nur Außendienst)
+  checks?: Record<string, CheckState>; // Unterpunkte aus der Checklisten-Vorlage (Schlüssel = Vorlagen-ID)
+}
+
+export interface CheckState {
+  done: boolean;
+  by?: string | null;
+  at?: number | null;
 }
 
 export interface GeoPoint {
@@ -42,12 +49,64 @@ export interface Project {
   deadline: string | null; // Abgabefrist YYYY-MM-DD
   location: GeoPoint | null;
   notes: string;
+  equipment: string[]; // IDs aus der Geräteliste
   steps: Record<StepKey, StepState>;
   archived: boolean;
   createdAt: number;
   createdBy: string | null;
   updatedAt: number;
   updatedBy: string | null;
+}
+
+// ---------- Gemeinsame Einstellungen (Checklisten-Vorlagen, Geräte) ----------
+
+export interface ChecklistItem {
+  id: string;
+  text: string;
+}
+
+export interface Equipment {
+  id: string;
+  name: string;
+}
+
+export interface Settings {
+  templates: Partial<Record<StepKey, ChecklistItem[]>>;
+  equipment: Equipment[];
+  windGustLimit?: number | null; // eigene Warnschwelle für Böen in m/s (leer = keine Warnung)
+}
+
+export const EMPTY_SETTINGS: Settings = { templates: {}, equipment: [], windGustLimit: null };
+
+/**
+ * Hinweis auf Doppelbelegung: andere (nicht archivierte) Projekte mit gleichem Außendienst-Tag
+ * und mindestens einem gemeinsamen Gerät. Nur für heutige/zukünftige Termine.
+ */
+export function equipmentConflicts(p: Project, all: Project[], equipment: Equipment[]) {
+  const date = p.steps.aussendienst.date;
+  if (!date || p.equipment.length === 0 || daysUntil(date) < 0) return [];
+  const names = new Map(equipment.map((e) => [e.id, e.name]));
+  return all
+    .filter((o) => o.id !== p.id && !o.archived && o.steps.aussendienst.date === date)
+    .map((o) => ({
+      project: o,
+      shared: o.equipment.filter((id) => p.equipment.includes(id) && names.has(id)).map((id) => names.get(id)!),
+    }))
+    .filter((c) => c.shared.length > 0);
+}
+
+export function newId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ---------- Verlauf & Kommentare ----------
+
+export interface ActivityEntry {
+  id: string;
+  type: 'comment' | 'event';
+  text: string;
+  by: string; // E-Mail
+  at: number;
 }
 
 export interface Member {
@@ -107,6 +166,7 @@ export function normalizeProject(id: string, d: Record<string, unknown>): Projec
     deadline: (d.deadline as string) || null,
     location: (d.location as GeoPoint) ?? null,
     notes: String(d.notes ?? ''),
+    equipment: Array.isArray(d.equipment) ? (d.equipment as unknown[]).map(String) : [],
     steps,
     archived: Boolean(d.archived),
     createdAt: Number(d.createdAt ?? 0),

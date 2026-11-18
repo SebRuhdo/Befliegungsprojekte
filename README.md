@@ -12,6 +12,13 @@ Gemeinsame Verwaltung unserer Drohnenbefliegungsprojekte – als Web-App (PWA) f
 - **Termine**: Außendienste und Abgabefristen chronologisch, überfällige rot; „In Kalender“ erzeugt einen Termin (.ics) für iPhone-Kalender/Outlook
 - **Karte**: alle Projekte mit Pin, Navigation per Apple Karten / Google Maps
 - **Ortssuche** (Projekt-Standort und Karte): Adresse/Ort über OpenStreetMap-Nominatim (nur Deutschland, Suche per Knopf – keine Suche beim Tippen gemäß Nutzungsregeln) oder Koordinaten: Dezimalgrad (`48.1374, 11.5755`) bzw. UTM ETRS89 Zone 32/33 (`32 691234 5334567`, `32691234 5334567`; ohne Zone → 32)
+- **Unterpunkte**: Checklisten-Vorlagen je Arbeitsschritt (⚙ Einstellungen), in jedem Projekt abhakbar
+- **Kommentare & Verlauf** pro Projekt: Kommentare mit Name und Zeit; Abhaken, Verschieben und Terminänderungen werden automatisch protokolliert
+- **Wetter am Außendienst-Tag** (7–18 Uhr): Wind und Böen in m/s, Regen, Temperatur, stündliche Tabelle; eigene Böen-Warnschwelle einstellbar.
+  Quelle: Deutscher Wetterdienst (CC BY 4.0) über [Bright Sky](https://brightsky.dev), ca. 10 Tage im Voraus
+- **Geozonen**: Knopf öffnet die amtliche dipul-Karte und kopiert die Pin-Koordinaten
+- **Kalender**: Termine als Liste oder Monatsansicht
+- **Geräte & Drohnen**: Geräteliste in den Einstellungen, Zuordnung im Projekt, Hinweis bei gleichem Gerät am selben Außendienst-Tag
 - **Offline**: Daten werden lokal zwischengespeichert, Änderungen ohne Netz werden später synchronisiert
 - **Live-Abgleich** zwischen allen Geräten, Archiv für abgeschlossene Projekte
 
@@ -51,7 +58,27 @@ Die Menünamen der Firebase-Konsole ändern sich gelegentlich; im Zweifel nach �
 
 Weitere Kolleginnen/Kollegen: in Authentication als Nutzer anlegen **und** in `members` eintragen.
 
-## Veröffentlichen (Firebase Hosting, kostenlos)
+## Automatisch veröffentlichen (GitHub Actions)
+
+Der Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) baut die App und lädt sie zu Firebase Hosting:
+
+- **Pull Request** → eigene Vorschau-Adresse (7 Tage gültig), der Link erscheint als Kommentar im Pull Request.
+  Achtung: Die Vorschau arbeitet mit den echten Daten.
+- **Änderung auf `main`** (z. B. Pull Request zusammengeführt) → Live-Version unter <https://befliegungsprojekte.web.app>
+- **Manuell**: GitHub → Reiter *Actions* → *Deploy* → *Run workflow*
+
+Einmalige Einrichtung (legt den Zugangsschlüssel als GitHub-Secret `FIREBASE_SERVICE_ACCOUNT_BEFLIEGUNGSPROJEKTE` an):
+
+```bash
+npm install
+npx firebase init hosting:github
+```
+
+Fragen des Assistenten: Repository `SebRuhdo/Befliegungsprojekte` · Build-Skript vor jedem Deploy: **Ja**, `npm ci && npm run build` ·
+automatisch bei Merge veröffentlichen: **Ja**, Branch `main`. Die dabei lokal erzeugten Workflow-Dateien werden nicht gebraucht
+(der Workflow liegt schon im Repository) – wichtig ist nur das angelegte Secret.
+
+## Manuell veröffentlichen (Firebase Hosting, kostenlos)
 
 Einmalig vorbereiten:
 

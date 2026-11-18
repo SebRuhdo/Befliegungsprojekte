@@ -1,8 +1,42 @@
-import { emptySteps, normalizeProject, type Member, type Project } from '../model';
+import { emptySteps, normalizeProject, type ActivityEntry, type Member, type Project, type Settings } from '../model';
 import type { AuthUser, Backend } from './types';
 
 // Demo-Modus: alles bleibt im localStorage dieses Browsers. Kein Login, kein Abgleich.
 const KEY = 'befliegungen-demo-v1';
+const SETTINGS_KEY = 'befliegungen-demo-settings-v1';
+const ACTIVITY_KEY = 'befliegungen-demo-activity-v1';
+
+// Beispiel-Einstellungen nur für den Demo-Modus – in der echten App legt ihr eure eigenen an
+const demoSettings: Settings = {
+  templates: {
+    vorbereitung: [
+      { id: 'd1', text: 'Beispiel: Fluggebiet geprüft' },
+      { id: 'd2', text: 'Beispiel: Akkus geladen' },
+    ],
+    aussendienst: [{ id: 'd3', text: 'Beispiel: Passpunkte eingemessen' }],
+  },
+  equipment: [
+    { id: 'e1', name: 'Beispiel-Drohne A' },
+    { id: 'e2', name: 'Beispiel-Sensor LiDAR' },
+  ],
+};
+
+function loadJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as T;
+  } catch {
+    /* ignorieren */
+  }
+  return fallback;
+}
+function saveJson(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignorieren */
+  }
+}
 const ME = 'person.a@demo';
 
 const members: Member[] = [
@@ -21,6 +55,7 @@ function seed(): Project[] {
     deadline: null,
     location: null,
     notes: '',
+    equipment: [],
     steps: emptySteps(),
     archived: false,
     createdAt: now,
@@ -91,6 +126,16 @@ export function createDemoBackend(): Backend {
   };
   const user: AuthUser = { email: ME };
 
+  let settings = loadJson<Settings>(SETTINGS_KEY, demoSettings);
+  const settingsListeners = new Set<(s: Settings) => void>();
+  let activity = loadJson<Record<string, ActivityEntry[]>>(ACTIVITY_KEY, {});
+  const activityListeners = new Map<string, Set<(e: ActivityEntry[]) => void>>();
+  const emitActivity = (projectId: string) => {
+    saveJson(ACTIVITY_KEY, activity);
+    const list = [...(activity[projectId] ?? [])].sort((a, b) => b.at - a.at);
+    activityListeners.get(projectId)?.forEach((l) => l(list));
+  };
+
   return {
     mode: 'demo',
     onAuth(cb) {
@@ -125,6 +170,7 @@ export function createDemoBackend(): Backend {
           ...data,
           location: null,
           notes: '',
+          equipment: [],
           steps: emptySteps(),
           archived: false,
           createdAt: now,
@@ -148,7 +194,36 @@ export function createDemoBackend(): Backend {
     },
     deleteProject(id) {
       projects = projects.filter((p) => p.id !== id);
+      delete activity[id];
+      saveJson(ACTIVITY_KEY, activity);
       emit();
+    },
+
+    subscribeSettings(cb) {
+      settingsListeners.add(cb);
+      cb(settings);
+      return () => settingsListeners.delete(cb);
+    },
+    saveSettings(patch) {
+      settings = { ...settings, ...patch };
+      saveJson(SETTINGS_KEY, settings);
+      settingsListeners.forEach((l) => l(settings));
+    },
+
+    subscribeActivity(projectId, cb) {
+      if (!activityListeners.has(projectId)) activityListeners.set(projectId, new Set());
+      activityListeners.get(projectId)!.add(cb);
+      cb([...(activity[projectId] ?? [])].sort((a, b) => b.at - a.at));
+      return () => activityListeners.get(projectId)?.delete(cb);
+    },
+    addActivity(projectId, entry) {
+      const e: ActivityEntry = { ...entry, id: `a-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, at: Date.now() };
+      activity = { ...activity, [projectId]: [...(activity[projectId] ?? []), e] };
+      emitActivity(projectId);
+    },
+    deleteActivity(projectId, entryId) {
+      activity = { ...activity, [projectId]: (activity[projectId] ?? []).filter((e) => e.id !== entryId) };
+      emitActivity(projectId);
     },
   };
 }

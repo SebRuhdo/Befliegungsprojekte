@@ -5,9 +5,10 @@ import { Login } from './components/Login';
 import { MapView } from './components/MapView';
 import { NewProjectDialog } from './components/NewProjectDialog';
 import { ProjectDetail } from './components/ProjectDetail';
+import { SettingsDialog } from './components/SettingsDialog';
 import { Termine } from './components/Termine';
 import type { AuthUser, Backend } from './data/types';
-import type { Member, Project } from './model';
+import { EMPTY_SETTINGS, type Member, type Project, type Settings } from './model';
 
 type View = 'board' | 'termine' | 'karte';
 
@@ -36,12 +37,14 @@ export function App({ backend }: { backend: Backend }) {
 function Main({ backend, user }: { backend: Backend; user: AuthUser }) {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [settings, setSettings] = useState<Settings>(EMPTY_SETTINGS);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [view, setView] = useState<View>(readView);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const onErr = (e: Error) =>
@@ -53,10 +56,12 @@ function Main({ backend, user }: { backend: Backend; user: AuthUser }) {
     const u1 = backend.subscribeProjects(setProjects, onErr);
     const u2 = backend.subscribeMembers(setMembers, onErr);
     const u3 = backend.subscribeSync(setPending);
+    const u4 = backend.subscribeSettings(setSettings, (e) => console.error('Einstellungen', e));
     return () => {
       u1();
       u2();
       u3();
+      u4();
     };
   }, [backend, user.email]);
 
@@ -84,6 +89,11 @@ function Main({ backend, user }: { backend: Backend; user: AuthUser }) {
     [backend, user.email],
   );
 
+  const log = useCallback(
+    (projectId: string, text: string) => backend.addActivity(projectId, { type: 'event', text, by: user.email }),
+    [backend, user.email],
+  );
+
   const ctx: AppCtx | null = useMemo(
     () =>
       projects && {
@@ -91,10 +101,12 @@ function Main({ backend, user }: { backend: Backend; user: AuthUser }) {
         me: user.email,
         members,
         projects,
+        settings,
         update,
+        log,
         openProject: setOpenId,
       },
-    [backend, user.email, members, projects, update],
+    [backend, user.email, members, projects, settings, update, log],
   );
 
   if (error) {
@@ -118,6 +130,9 @@ function Main({ backend, user }: { backend: Backend; user: AuthUser }) {
           <div className="topbar-row">
             <h1>Befliegungen</h1>
             <SyncBadge online={online} pending={pending} demo={backend.mode === 'demo'} />
+            <button className="icon-btn settings-btn" onClick={() => setShowSettings(true)} aria-label="Einstellungen" title="Einstellungen">
+              ⚙
+            </button>
             <button className="btn btn-primary add-btn" onClick={() => setCreating(true)} aria-label="Neues Projekt">
               <span aria-hidden>＋</span> <span className="add-label">Projekt</span>
             </button>
@@ -164,6 +179,7 @@ function Main({ backend, user }: { backend: Backend; user: AuthUser }) {
       </div>
 
       {openProject && <ProjectDetail project={openProject} onClose={() => setOpenId(null)} />}
+      {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
       {creating && (
         <NewProjectDialog
           onClose={() => setCreating(false)}

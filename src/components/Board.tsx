@@ -45,7 +45,7 @@ function sortProjects(list: Project[]): Project[] {
 }
 
 export function Board() {
-  const { projects, me, update } = useApp();
+  const { projects, me, update, log } = useApp();
   const [grouping, setGrouping] = useState<Grouping>(readGrouping);
   const [onlyMine, setOnlyMine] = useState(false);
   const [query, setQuery] = useState('');
@@ -78,6 +78,13 @@ export function Board() {
     const plan = planMove(p, target, me);
     if (Object.keys(plan.patch).length === 0) return;
     update(id, plan.patch);
+    const summary = [
+      plan.checked.length ? `${plan.checked.length} abgehakt` : '',
+      plan.unchecked.length ? `${plan.unchecked.length} wieder geöffnet` : '',
+    ]
+      .filter(Boolean)
+      .join(', ');
+    log(id, `hat das Projekt nach „${label}“ verschoben (${summary})`);
     const n = (k: number) => (k === 1 ? '1 Schritt' : `${k} Schritte`);
     const parts = [
       plan.checked.length ? `${n(plan.checked.length)} abgehakt` : '',
@@ -85,7 +92,10 @@ export function Board() {
     ].filter(Boolean);
     setToast({
       text: `${p.name || p.number} → ${label} · ${parts.join(', ')}`,
-      undo: () => update(id, plan.undo),
+      undo: () => {
+        update(id, plan.undo);
+        log(id, 'hat die Verschiebung rückgängig gemacht');
+      },
     });
   };
 

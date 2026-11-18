@@ -3,7 +3,7 @@ import { useApp } from '../AppContext';
 import { kumoplanUrlFromInput, type Priority } from '../model';
 
 export function NewProjectDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
-  const { backend, me, projects } = useApp();
+  const { backend, me, projects, log } = useApp();
   const [number, setNumber] = useState(`${new Date().getFullYear()} `);
   const [name, setName] = useState('');
   const [priority, setPriority] = useState<Priority>(0);
@@ -28,6 +28,7 @@ export function NewProjectDialog({ onClose, onCreated }: { onClose: () => void; 
       { number: number.trim(), name: name.trim(), priority, deadline: deadline || null, kumoplanUrl: kumoplanUrlFromInput(kumoplan) },
       me,
     );
+    log(id, 'hat das Projekt angelegt');
     onCreated(id);
   };
 

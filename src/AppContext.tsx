@@ -1,13 +1,16 @@
 import { createContext, useContext } from 'react';
 import type { Backend } from './data/types';
-import type { Member, Project } from './model';
+import type { Member, Project, Settings } from './model';
 
 export interface AppCtx {
   backend: Backend;
   me: string; // E-Mail des angemeldeten Mitglieds
   members: Member[];
   projects: Project[];
+  settings: Settings;
   update: (id: string, patch: Record<string, unknown>) => void;
+  /** Eintrag im Verlauf des Projekts (z. B. „hat Außendienst abgehakt“) */
+  log: (projectId: string, text: string) => void;
   openProject: (id: string) => void;
 }
 

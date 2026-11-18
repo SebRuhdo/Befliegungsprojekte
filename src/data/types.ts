@@ -1,4 +1,4 @@
-import type { Member, NewProject, Project } from '../model';
+import type { ActivityEntry, Member, NewProject, Project, Settings } from '../model';
 
 export interface AuthUser {
   email: string;
@@ -22,4 +22,13 @@ export interface Backend {
   /** Feldweise Änderung, z. B. { 'steps.abgabe.done': true } – so überschreiben wir uns nicht gegenseitig */
   updateProject(id: string, patch: Record<string, unknown>, by: string): void;
   deleteProject(id: string): void;
+
+  /** Gemeinsame Einstellungen: Checklisten-Vorlagen und Geräteliste */
+  subscribeSettings(cb: (s: Settings) => void, onError: (e: Error) => void): () => void;
+  saveSettings(patch: Partial<Settings>): void;
+
+  /** Verlauf & Kommentare eines Projekts (neueste zuerst) */
+  subscribeActivity(projectId: string, cb: (entries: ActivityEntry[]) => void, onError: (e: Error) => void): () => void;
+  addActivity(projectId: string, entry: Omit<ActivityEntry, 'id' | 'at'>): void;
+  deleteActivity(projectId: string, entryId: string): void;
 }

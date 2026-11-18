@@ -11,12 +11,28 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/members/$(request.auth.token.email.lower()));
     }
 
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
     match /members/{email} {
       allow read: if isMember();
       allow write: if false;
     }
 
     match /projects/{projectId} {
+      allow read, write: if isMember();
+
+      // Kommentare & Verlauf: nur im eigenen Namen schreiben, nicht nachträglich ändern
+      match /activity/{entryId} {
+        allow read, delete: if isMember();
+        allow create: if isMember() && request.resource.data.by == myEmail();
+        allow update: if false;
+      }
+    }
+
+    // Gemeinsame Einstellungen (Checklisten-Vorlagen, Geräte, Wind-Warnschwelle)
+    match /settings/{docId} {
       allow read, write: if isMember();
     }
   }

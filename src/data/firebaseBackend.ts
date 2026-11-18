@@ -7,18 +7,23 @@ import {
   signOut as fbSignOut,
 } from 'firebase/auth';
 import {
+  addDoc,
   collection,
   deleteDoc,
   doc,
+  getDocs,
   initializeFirestore,
   onSnapshot,
+  orderBy,
   persistentLocalCache,
   persistentMultipleTabManager,
+  query,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { firebaseConfig } from '../firebase-config';
-import { emptySteps, normalizeProject, type Member } from '../model';
+import { EMPTY_SETTINGS, emptySteps, normalizeProject, type ActivityEntry, type Member, type Settings } from '../model';
 import type { Backend } from './types';
 
 export function createFirebaseBackend(): Backend {
@@ -30,6 +35,7 @@ export function createFirebaseBackend(): Backend {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   });
   const projectsCol = collection(db, 'projects');
+  const settingsDoc = doc(db, 'settings', 'app');
 
   const logError = (e: unknown) => console.error('Firestore-Schreibfehler', e);
 
@@ -85,6 +91,7 @@ export function createFirebaseBackend(): Backend {
         ...data,
         location: null,
         notes: '',
+        equipment: [],
         steps: emptySteps(),
         archived: false,
         createdAt: now,
@@ -98,7 +105,60 @@ export function createFirebaseBackend(): Backend {
       updateDoc(doc(projectsCol, id), { ...patch, updatedAt: Date.now(), updatedBy: by }).catch(logError);
     },
     deleteProject(id) {
-      deleteDoc(doc(projectsCol, id)).catch(logError);
+      // Verlauf mitlöschen (Firestore löscht Unter-Sammlungen nicht automatisch)
+      const activity = collection(db, 'projects', id, 'activity');
+      getDocs(activity)
+        .then((snap) => {
+          const batch = writeBatch(db);
+          snap.docs.forEach((d) => batch.delete(d.ref));
+          batch.delete(doc(projectsCol, id));
+          return batch.commit();
+        })
+        .catch(logError);
+    },
+
+    subscribeSettings(cb, onError) {
+      return onSnapshot(
+        settingsDoc,
+        (snap) => {
+          const d = (snap.data() ?? {}) as Partial<Settings>;
+          cb({
+            templates: d.templates ?? EMPTY_SETTINGS.templates,
+            equipment: Array.isArray(d.equipment) ? d.equipment : [],
+            windGustLimit: typeof d.windGustLimit === 'number' ? d.windGustLimit : null,
+          });
+        },
+        onError,
+      );
+    },
+    saveSettings(patch) {
+      setDoc(settingsDoc, patch, { merge: true }).catch(logError);
+    },
+
+    subscribeActivity(projectId, cb, onError) {
+      return onSnapshot(
+        query(collection(db, 'projects', projectId, 'activity'), orderBy('at', 'desc')),
+        (snap) =>
+          cb(
+            snap.docs.map((d): ActivityEntry => {
+              const x = d.data();
+              return {
+                id: d.id,
+                type: x.type === 'comment' ? 'comment' : 'event',
+                text: String(x.text ?? ''),
+                by: String(x.by ?? ''),
+                at: Number(x.at ?? 0),
+              };
+            }),
+          ),
+        onError,
+      );
+    },
+    addActivity(projectId, entry) {
+      addDoc(collection(db, 'projects', projectId, 'activity'), { ...entry, at: Date.now() }).catch(logError);
+    },
+    deleteActivity(projectId, entryId) {
+      deleteDoc(doc(db, 'projects', projectId, 'activity', entryId)).catch(logError);
     },
   };
 }

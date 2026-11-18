@@ -4,7 +4,10 @@ import { addToCalendar } from '../ics';
 import {
   STATUS_LABEL,
   STEPS,
+  stepLabel,
   doneCount,
+  equipmentConflicts,
+  formatDate,
   kumoplanDisplay,
   kumoplanUrlFromInput,
   statusOf,
@@ -12,7 +15,9 @@ import {
   type Project,
   type StepKey,
 } from '../model';
+import { ActivityFeed } from './ActivityFeed';
 import { LocationPicker } from './LocationPicker';
+import { WeatherBox } from './WeatherBox';
 import { dateTone } from './ProjectCard';
 
 /** Textfeld, das erst beim Verlassen speichert und Änderungen der Kollegin übernimmt, solange man nicht tippt */
@@ -58,7 +63,7 @@ function EditableText({
 }
 
 export function ProjectDetail({ project: p, onClose }: { project: Project; onClose: () => void }) {
-  const { update, members, me, backend } = useApp();
+  const { update, members, me, backend, settings, projects, log, openProject } = useApp();
   const status = statusOf(p);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const set = (patch: Record<string, unknown>) => update(p.id, patch);
@@ -73,12 +78,24 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
     };
   }, [onClose]);
 
-  const toggleStep = (key: StepKey, done: boolean) =>
+  const toggleStep = (key: StepKey, done: boolean) => {
     set({
       [`steps.${key}.done`]: done,
       [`steps.${key}.doneAt`]: done ? Date.now() : null,
       [`steps.${key}.doneBy`]: done ? me : null,
     });
+    log(p.id, `hat „${stepLabel(key)}“ ${done ? 'abgehakt' : 'wieder geöffnet'}`);
+  };
+
+  const toggleCheck = (key: StepKey, itemId: string, done: boolean) =>
+    set({ [`steps.${key}.checks.${itemId}`]: { done, by: done ? me : null, at: done ? Date.now() : null } });
+
+  const toggleEquipment = (id: string) => {
+    const has = p.equipment.includes(id);
+    set({ equipment: has ? p.equipment.filter((x) => x !== id) : [...p.equipment, id] });
+  };
+
+  const conflicts = equipmentConflicts(p, projects, settings.equipment);
 
   const title = `${p.number} ${p.name}`.trim();
 
@@ -128,7 +145,11 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
                 type="date"
                 className={`input ${dateTone(p.deadline, status === 'fertig')}`}
                 value={p.deadline ?? ''}
-                onChange={(e) => set({ deadline: e.target.value || null })}
+                onChange={(e) => {
+                  const v = e.target.value || null;
+                  set({ deadline: v });
+                  log(p.id, v ? `hat die Abgabefrist auf ${formatDate(v)} gesetzt` : 'hat die Abgabefrist entfernt');
+                }}
               />
               {p.deadline && (
                 <button
@@ -169,6 +190,37 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
             </div>
           </div>
 
+          <div className="field-row field-row-top">
+            <span className="field-label">Geräte</span>
+            <div className="equipment-chips">
+              {settings.equipment.length === 0 && <span className="muted small">Noch keine Geräte angelegt (⚙ Einstellungen).</span>}
+              {settings.equipment.map((eq) => (
+                <button
+                  key={eq.id}
+                  className={`eq-chip ${p.equipment.includes(eq.id) ? 'active' : ''}`}
+                  onClick={() => toggleEquipment(eq.id)}
+                  aria-pressed={p.equipment.includes(eq.id)}
+                >
+                  {eq.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          {conflicts.length > 0 && (
+            <div className="conflict-note" role="note">
+              <strong>Hinweis Geräte:</strong> Am {formatDate(p.steps.aussendienst.date)} ebenfalls eingeplant bei{' '}
+              {conflicts.map((c, i) => (
+                <span key={c.project.id}>
+                  {i > 0 && ', '}
+                  <button className="link-btn" onClick={() => openProject(c.project.id)}>
+                    {`${c.project.number} ${c.project.name}`.trim()}
+                  </button>{' '}
+                  ({c.shared.join(', ')})
+                </span>
+              ))}
+            </div>
+          )}
+
           <h3 className="section-title">
             Arbeitsschritte <span className="muted">{doneCount(p)}/{STEPS.length}</span>
           </h3>
@@ -189,6 +241,12 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
                           {st.doneAt ? ` am ${new Date(st.doneAt).toLocaleDateString('de-DE')}` : ''}
                         </small>
                       )}
+                      {(settings.templates[s.key]?.length ?? 0) > 0 && (
+                        <small className="step-hint">
+                          Unterpunkte {settings.templates[s.key]!.filter((it) => st.checks?.[it.id]?.done).length}/
+                          {settings.templates[s.key]!.length}
+                        </small>
+                      )}
                     </span>
                   </label>
                   <div className="step-extra">
@@ -198,7 +256,11 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
                           type="date"
                           className={`input input-small ${dateTone(st.date, st.done)}`}
                           value={st.date ?? ''}
-                          onChange={(e) => set({ [`steps.${s.key}.date`]: e.target.value || null })}
+                          onChange={(e) => {
+                            const v = e.target.value || null;
+                            set({ [`steps.${s.key}.date`]: v });
+                            log(p.id, v ? `hat den Außendienst auf ${formatDate(v)} gelegt` : 'hat das Außendienst-Datum entfernt');
+                          }}
                           aria-label="Datum Außendienst"
                         />
                         {st.date && (
@@ -234,6 +296,27 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
                       ))}
                     </select>
                   </div>
+                  {(settings.templates[s.key]?.length ?? 0) > 0 && (
+                    <ul className="subchecks">
+                      {settings.templates[s.key]!.map((it) => {
+                        const c = st.checks?.[it.id];
+                        return (
+                          <li key={it.id}>
+                            <label className={c?.done ? 'subcheck-done' : ''}>
+                              <input type="checkbox" checked={!!c?.done} onChange={(e) => toggleCheck(s.key, it.id, e.target.checked)} />
+                              <span>{it.text}</span>
+                              {c?.done && c.by && <small className="muted">{memberName(members, c.by)}</small>}
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {'hasDate' in s && !st.done && (
+                    <div className="step-weather">
+                      <WeatherBox location={p.location} date={st.date} />
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -251,6 +334,9 @@ export function ProjectDetail({ project: p, onClose }: { project: Project; onClo
             placeholder="Notizen, Links zu Daten (NAS, OneDrive …)"
             aria-label="Notizen"
           />
+
+          <h3 className="section-title">Kommentare & Verlauf</h3>
+          <ActivityFeed projectId={p.id} />
 
           <div className="danger-zone">
             {status === 'fertig' && (

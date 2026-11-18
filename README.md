@@ -18,8 +18,9 @@ Gemeinsame Verwaltung unserer Drohnenbefliegungsprojekte – als Web-App (PWA) f
 
 React + TypeScript (Vite), Firebase (Authentication + Firestore, Serverstandort EU), Leaflet/OpenStreetMap, PWA (vite-plugin-pwa).
 
-Ohne Firebase-Konfiguration startet die App im **Demo-Modus** (Beispieldaten, nur lokal im Browser).
-Mit `?demo` an der URL lässt sich der Demo-Modus auch erzwingen.
+Die Firebase-Konfiguration steht in [`src/firebase-config.ts`](src/firebase-config.ts).
+Mit `?demo` an der URL startet die App im **Demo-Modus** (Beispieldaten, nur lokal im Browser);
+`VITE_DEMO=1 npm run build` erzeugt einen reinen Demo-Build.
 
 ## Lokal starten
 
@@ -42,7 +43,7 @@ npm run build      # Produktions-Build nach dist/
 5. **Firestore → Regeln**: Inhalt von [`firestore.rules`](firestore.rules) einfügen → *Veröffentlichen*.
 6. **Projekteinstellungen** (Zahnrad) → *Allgemein* → *Meine Apps* → Web-App (`</>`) registrieren
    (Firebase Hosting hier nicht ankreuzen) → die angezeigten Werte (`apiKey`, `authDomain`, `projectId`, …)
-   in `.env.local` eintragen (Vorlage: [`.env.example`](.env.example)).
+   stehen in [`src/firebase-config.ts`](src/firebase-config.ts) (✔ bereits eingetragen).
    Diese Werte sind nicht geheim; geschützt wird über Login + Regeln.
 
 Die Menünamen der Firebase-Konsole ändern sich gelegentlich; im Zweifel nach „Firestore“ bzw. „Authentication“ suchen.
@@ -54,7 +55,6 @@ Weitere Kolleginnen/Kollegen: in Authentication als Nutzer anlegen **und** in `m
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase use --add            # Firebase-Projekt auswählen
 npm run build
 firebase deploy --only hosting,firestore:rules
 ```

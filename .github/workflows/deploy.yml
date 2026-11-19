@@ -1,0 +1,55 @@
+# Automatisches Veröffentlichen auf Firebase Hosting
+# - Pull Request  → Vorschau-Adresse (eigener Kanal, läuft nach 7 Tagen ab), Link erscheint als Kommentar im PR
+# - Push auf main → Live-Version unter https://befliegungsprojekte.web.app
+# - manuell        → Reiter „Actions“ → „Deploy“ → „Run workflow“
+# Benötigt das Repository-Secret FIREBASE_SERVICE_ACCOUNT_BEFLIEGUNGSPROJEKTE (Einrichtung: siehe README).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Vorschau (Pull Request)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BEFLIEGUNGSPROJEKTE }}
+          projectId: befliegungsprojekte
+          expires: 7d
+
+      - name: Live (main / manuell)
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BEFLIEGUNGSPROJEKTE }}
+          projectId: befliegungsprojekte
+          channelId: live
